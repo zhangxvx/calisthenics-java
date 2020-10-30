@@ -13,7 +13,7 @@ public class Application {
     private final HashMap<String, List<List<String>>> applied = new HashMap<>();
     private final List<List<String>> failedApplications = new ArrayList<>();
 
-    public void execute(Command command, final Employer employer, final Job job, String resumeApplicantName, LocalDate applicationTime, JobSeeker jobSeeker) throws RequiresResumeForJReqJobException, InvalidResumeException {
+    public void execute(Command command, final Employer employer, final Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
         switch (command) {
             case publish:
                 List<List<String>> alreadyPublished = jobs.getOrDefault(employer.getName(), new ArrayList<>());
@@ -35,7 +35,7 @@ public class Application {
                 break;
             }
             case apply: {
-                if (job.getType() == JobType.JReq && resumeApplicantName == null) {
+                if (job.getType() == JobType.JReq && resume.getApplicantName() == null) {
                     List<String> failedApplication = new ArrayList<String>() {{
                         add(job.getName());
                         add(job.getType().name());
@@ -46,7 +46,7 @@ public class Application {
                     throw new RequiresResumeForJReqJobException();
                 }
 
-                if (job.getType() == JobType.JReq && !resumeApplicantName.equals(jobSeeker.getName())) {
+                if (job.getType() == JobType.JReq && !resume.getApplicantName().equals(jobSeeker.getName())) {
                     throw new InvalidResumeException();
                 }
                 List<List<String>> saved = this.applied.getOrDefault(jobSeeker.getName(), new ArrayList<>());
