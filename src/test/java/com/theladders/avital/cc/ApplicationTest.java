@@ -36,11 +36,11 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_publish_a_job() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_publish_a_job() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerName = "";
         String jobName = "高级前端开发";
-        application.execute("publish", employerName, jobName, "JReq", null, null, null);
-        List<List<String>> jobs = application.getJobs(employerName, "published");
+        application.execute(employerName, jobName, null, null, null, Command.publish, JobType.JReq);
+        List<List<String>> jobs = application.getJobs(employerName, GettingJobsType.published);
         List<List<String>> expected = new ArrayList<List<String>>() {{
             add(createNewJob("高级前端开发", "JReq"));
         }};
@@ -49,14 +49,14 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_only_be_able_to_see_jobs_published_by_them() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_only_be_able_to_see_jobs_published_by_them() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String employerTencent = "Tencent";
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("publish", employerTencent, juniorJavaDevJob, "JReq", null, null, null);
-        List<List<String>> jobs = application.getJobs(employerAlibaba, "published");
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerTencent, juniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        List<List<String>> jobs = application.getJobs(employerAlibaba, GettingJobsType.published);
         List<List<String>> expected = new ArrayList<List<String>>() {{
             add(createNewJob("高级Java开发", "JReq"));
         }};
@@ -65,12 +65,12 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_publish_ATS_jobs() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_publish_ATS_jobs() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String seniorJavaDevJob = "高级Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        List<List<String>> jobs = application.getJobs(employerAlibaba, "published");
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        List<List<String>> jobs = application.getJobs(employerAlibaba, GettingJobsType.published);
         List<List<String>> expected = new ArrayList<List<String>>() {{
             add(createNewJob("高级Java开发", "ATS"));
         }};
@@ -78,22 +78,14 @@ public class ApplicationTest {
         assertThat(jobs, is(expected));
     }
 
-    @Test(expected = NotSupportedJobTypeException.class)
-    public void employers_should_not_be_able_to_publish_jobs_that_are_neither_ATS_nor_JReq() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
-        String employerAlibaba = "Alibaba";
-        String seniorJavaDevJob = "高级Java开发";
-
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "RJeq", null, null, null);
-    }
-
     @Test
-    public void jobseekers_should_be_able_to_save_jobs_published_by_employers_for_later_review() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void jobseekers_should_be_able_to_save_jobs_published_by_employers_for_later_review() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerName = "Jacky";
         String jobName = "高级Java开发";
-        application.execute("publish", employerAlibaba, jobName, "JReq", null, null, null);
-        application.execute("save", jobSeekerName, jobName, "JReq", null, null, null);
-        List<List<String>> savedJobs = application.getJobs(jobSeekerName, "published");
+        application.execute(employerAlibaba, jobName, null, null, null, Command.publish, JobType.JReq);
+        application.execute(jobSeekerName, jobName, null, null, null, Command.save, JobType.JReq);
+        List<List<String>> savedJobs = application.getJobs(jobSeekerName, GettingJobsType.published);
         List<List<String>> expected = new ArrayList<List<String>>() {{
             add(createNewJob("高级Java开发", "JReq"));
         }};
@@ -102,17 +94,17 @@ public class ApplicationTest {
     }
 
     @Test
-    public void jobseekers_should_be_able_to_apply_for_an_ATS_job_some_employer_published_without_a_resume() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void jobseekers_should_be_able_to_apply_for_an_ATS_job_some_employer_published_without_a_resume() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerName = "Jacky";
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerName, null, LocalDate.parse("2020-01-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerName, null, LocalDate.parse("2020-01-01"));
-        List<List<String>> appliedJobs = application.getJobs(jobSeekerName, "applied");
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerName, null, LocalDate.parse("2020-01-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerName, null, LocalDate.parse("2020-01-01"), Command.apply, JobType.ATS);
+        List<List<String>> appliedJobs = application.getJobs(jobSeekerName, GettingJobsType.applied);
         List<List<String>> expected = new ArrayList<List<String>>() {{
             add(createNewJob("Java开发", "ATS", "Alibaba", "2020-01-01"));
             add(createNewJob("高级Java开发", "ATS", "Alibaba", "2020-01-01"));
@@ -122,37 +114,37 @@ public class ApplicationTest {
     }
 
     @Test(expected = RequiresResumeForJReqJobException.class)
-    public void jobseekers_should_not_be_able_to_apply_for_an_JReq_job_some_employer_published_without_a_resume() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void jobseekers_should_not_be_able_to_apply_for_an_JReq_job_some_employer_published_without_a_resume() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerName = "Jacky";
         String seniorJavaDevJob = "高级Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerName, null, LocalDate.now());
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerName, null, LocalDate.now(), Command.apply, JobType.JReq);
     }
 
     @Test(expected = InvalidResumeException.class)
-    public void jobseekers_should_not_be_able_to_apply_for_an_JReq_job_some_employer_published_with_someone_else_s_resume() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void jobseekers_should_not_be_able_to_apply_for_an_JReq_job_some_employer_published_with_someone_else_s_resume() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerName = "Jacky";
         String seniorJavaDevJob = "高级Java开发";
         String resumeApplicantName = "Jacky Chen";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerName, resumeApplicantName, LocalDate.now());
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerName, resumeApplicantName, LocalDate.now(), Command.apply, JobType.JReq);
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_of_a_job() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_of_a_job() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jobSeekerLam = "Lam";
         String seniorJavaDevJob = "高级Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.now());
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerLam, null, LocalDate.now());
-        List<String> applicants = application.findApplicants(seniorJavaDevJob, employerAlibaba);
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.now(), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerLam, null, LocalDate.now(), Command.apply, JobType.ATS);
+        List<String> applicants = application.findApplicants(seniorJavaDevJob);
 
         List<String> expected = new ArrayList<String>() {{
             add("Lam");
@@ -163,16 +155,16 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_to_a_job_by_application_date() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_to_a_job_by_application_date() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jobSeekerHo = "Ho";
         String seniorJavaDevJob = "高级Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
-        List<String> applicants = application.findApplicants(null, employerAlibaba, LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        List<String> applicants = application.findApplicants(null, LocalDate.parse("1999-12-20"));
 
         List<String> expected = new ArrayList<String>() {{
             add("Ho");
@@ -182,16 +174,16 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_to_a_job_by_period_when_period_end_is_given_while_period_start_is_not() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_to_a_job_by_period_when_period_end_is_given_while_period_start_is_not() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jobSeekerHo = "Ho";
         String seniorJavaDevJob = "高级Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
-        List<String> applicants = application.findApplicants(null, employerAlibaba, null, LocalDate.parse("1999-01-01"));
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        List<String> applicants = application.findApplicants(null, null, LocalDate.parse("1999-01-01"));
 
         List<String> expected = new ArrayList<String>() {{
             add("Jacky");
@@ -201,16 +193,16 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_to_a_job_by_period() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_to_a_job_by_period() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jobSeekerHo = "Ho";
         String seniorJavaDevJob = "高级Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
-        List<String> applicants = application.findApplicants(null, employerAlibaba, LocalDate.parse("1997-07-01"), LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        List<String> applicants = application.findApplicants(null, LocalDate.parse("1997-07-01"), LocalDate.parse("1999-12-20"));
 
         List<String> expected = new ArrayList<String>() {{
             add("Ho");
@@ -221,7 +213,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_to_a_job_by_job_name_and_period_when_period_start_is_given_while_period_end_is_not() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_to_a_job_by_job_name_and_period_when_period_start_is_given_while_period_end_is_not() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String resumeApplicantName = "Jacky";
@@ -229,13 +221,13 @@ public class ApplicationTest {
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerJacky, resumeApplicantName, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, resumeApplicantName, LocalDate.parse("1999-12-20"), Command.apply, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
 
-        List<String> applicants = application.findApplicants(seniorJavaDevJob, employerAlibaba, LocalDate.parse("1999-12-20"));
+        List<String> applicants = application.findApplicants(seniorJavaDevJob, LocalDate.parse("1999-12-20"));
 
         List<String> expected = new ArrayList<String>() {{
             add("Jacky");
@@ -245,20 +237,20 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_to_a_job_by_job_name_and_period_when_period_end_is_given_while_period_start_is_not() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_to_a_job_by_job_name_and_period_when_period_end_is_given_while_period_start_is_not() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jobSeekerHo = "Ho";
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
 
-        List<String> applicants = application.findApplicants(juniorJavaDevJob, employerAlibaba, null, LocalDate.parse("1999-01-01"));
+        List<String> applicants = application.findApplicants(juniorJavaDevJob, null, LocalDate.parse("1999-01-01"));
 
         List<String> expected = new ArrayList<String>() {{
             add("Jacky");
@@ -268,7 +260,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void employers_should_be_able_to_find_applicants_to_a_job_by_job_name_and_period() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void employers_should_be_able_to_find_applicants_to_a_job_by_job_name_and_period() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerWong = "Wong";
         String jobSeekerJacky = "Jacky";
@@ -277,14 +269,14 @@ public class ApplicationTest {
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerWong, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1998-01-01"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerLam, null, LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerWong, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1998-01-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerLam, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
 
-        List<String> applicants = application.findApplicants(juniorJavaDevJob, employerAlibaba, LocalDate.parse("1997-01-01"), LocalDate.parse("1999-01-01"));
+        List<String> applicants = application.findApplicants(juniorJavaDevJob, LocalDate.parse("1997-01-01"), LocalDate.parse("1999-01-01"));
 
         List<String> expected = new ArrayList<String>() {{
             add("Ho");
@@ -295,7 +287,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void should_generator_csv_reports_of_all_jobseekers_on_a_given_date() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void should_generator_csv_reports_of_all_jobseekers_on_a_given_date() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jackyResume = "Jacky";
@@ -305,22 +297,22 @@ public class ApplicationTest {
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerJacky, jackyResume, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerLam, null, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerLam, lamResume, LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, jackyResume, LocalDate.parse("1999-12-20"), Command.apply, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerLam, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerLam, lamResume, LocalDate.parse("1999-12-20"), Command.apply, JobType.JReq);
 
-        String csv = application.export("csv", LocalDate.parse("1999-12-20"));
+        String csv = application.export(LocalDate.parse("1999-12-20"), ExportType.csv);
         String expected = "Employer,Job,Job Type,Applicants,Date" + "\n" + "Alibaba,Java开发,ATS,Ho,1999-12-20" + "\n" + "Alibaba,Java开发,ATS,Lam,1999-12-20" + "\n" + "Alibaba,高级Java开发,JReq,Lam,1999-12-20" + "\n" + "Alibaba,高级Java开发,JReq,Jacky,1999-12-20" + "\n";
 
         assertThat(csv, is(expected));
     }
 
     @Test
-    public void should_generator_html_reports_of_all_jobseekers_on_a_given_date() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void should_generator_html_reports_of_all_jobseekers_on_a_given_date() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jackyResume = "Jacky";
@@ -330,15 +322,15 @@ public class ApplicationTest {
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.parse("1997-07-01"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerJacky, jackyResume, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerLam, null, LocalDate.parse("1999-12-20"));
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerLam, lamResume, LocalDate.parse("1999-12-20"));
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerJacky, null, LocalDate.parse("1997-07-01"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, jackyResume, LocalDate.parse("1999-12-20"), Command.apply, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerHo, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerLam, null, LocalDate.parse("1999-12-20"), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerLam, lamResume, LocalDate.parse("1999-12-20"), Command.apply, JobType.JReq);
 
-        String csv = application.export("html", LocalDate.parse("1999-12-20"));
+        String csv = application.export(LocalDate.parse("1999-12-20"), ExportType.html);
         String expected = "<!DOCTYPE html>"
                 + "<body>"
                 + "<table>"
@@ -389,7 +381,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void should_be_able_to_see_successful_application_of_a_job_for_an_employer() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void should_be_able_to_see_successful_application_of_a_job_for_an_employer() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String employerTencent = "Tencent";
         String jobSeekerJacky = "Jacky";
@@ -398,32 +390,32 @@ public class ApplicationTest {
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("publish", employerTencent, juniorJavaDevJob, "ATS", null, null, null);
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerJacky, null, LocalDate.now());
-        application.execute("apply", employerAlibaba, seniorJavaDevJob, "ATS", jobSeekerLam, null, LocalDate.now());
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.now());
-        application.execute("apply", employerTencent, juniorJavaDevJob, "ATS", jobSeekerHo, null, LocalDate.now());
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerTencent, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.now(), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerLam, null, LocalDate.now(), Command.apply, JobType.ATS);
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerHo, null, LocalDate.now(), Command.apply, JobType.ATS);
+        application.execute(employerTencent, juniorJavaDevJob, jobSeekerHo, null, LocalDate.now(), Command.apply, JobType.ATS);
 
         assertThat(application.getSuccessfulApplications(employerAlibaba, seniorJavaDevJob), is(2));
         assertThat(application.getSuccessfulApplications(employerAlibaba, juniorJavaDevJob), is(1));
     }
 
     @Test
-    public void should_be_able_to_see_unsuccessful_applications_of_a_job_for_an_employer() throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
+    public void should_be_able_to_see_unsuccessful_applications_of_a_job_for_an_employer() throws RequiresResumeForJReqJobException, InvalidResumeException {
         String employerAlibaba = "Alibaba";
         String jobSeekerJacky = "Jacky";
         String jobSeekerLam = "Lam";
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
 
-        application.execute("publish", employerAlibaba, seniorJavaDevJob, "JReq", null, null, null);
-        application.execute("publish", employerAlibaba, juniorJavaDevJob, "ATS", null, null, null);
+        application.execute(employerAlibaba, seniorJavaDevJob, null, null, null, Command.publish, JobType.JReq);
+        application.execute(employerAlibaba, juniorJavaDevJob, null, null, null, Command.publish, JobType.ATS);
         try {
-            application.execute("apply", employerAlibaba, seniorJavaDevJob, "JReq", jobSeekerJacky, null, LocalDate.now());
+            application.execute(employerAlibaba, seniorJavaDevJob, jobSeekerJacky, null, LocalDate.now(), Command.apply, JobType.JReq);
         } catch (RequiresResumeForJReqJobException ignored) {}
-        application.execute("apply", employerAlibaba, juniorJavaDevJob, "ATS", jobSeekerLam, null, LocalDate.now());
+        application.execute(employerAlibaba, juniorJavaDevJob, jobSeekerLam, null, LocalDate.now(), Command.apply, JobType.ATS);
 
         assertThat(application.getUnsuccessfulApplications(employerAlibaba, seniorJavaDevJob), is(1));
         assertThat(application.getUnsuccessfulApplications(employerAlibaba, juniorJavaDevJob), is(0));
