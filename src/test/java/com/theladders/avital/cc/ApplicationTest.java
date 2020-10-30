@@ -5,7 +5,6 @@ import org.junit.Test;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -14,11 +13,13 @@ import static org.junit.Assert.assertThat;
 public class ApplicationTest {
     Application application;
 
-    private JobApplication createNewJobApplication(String jobName, String jobType, String employerName, String applicationTime) {
-        Job job = new Job(jobName, JobType.valueOf(jobType));
-        LocalDate applicationTime1 = LocalDate.parse(applicationTime);
-        Employer employer = new Employer(employerName);
-        return new JobApplication(job, applicationTime1, employer);
+    private ArrayList<String> createNewJob(String jobName, String jobType, String employerName, String applicationTime) {
+        return new ArrayList<String>() {{
+            add(jobName);
+            add(jobType);
+            add(applicationTime);
+            add(employerName);
+        }};
     }
 
     private ArrayList<String> createNewJob(final String jobName, final String jobType) {
@@ -28,9 +29,6 @@ public class ApplicationTest {
         }};
     }
 
-    private Job createNewJob(final String jobName, final JobType jobType) {
-        return new Job(jobName, jobType);
-    }
 
     @Before
     public void setUp() throws Exception {
@@ -39,40 +37,44 @@ public class ApplicationTest {
 
     @Test
     public void employers_should_be_able_to_publish_a_job() throws RequiresResumeForJReqJobException, InvalidResumeException {
-        Employer employer = new Employer("");
+        String employerName = "";
         String jobName = "高级前端开发";
-        application.execute(Command.publish, employer, new Job(jobName, JobType.JReq), null, new JobSeeker(null), new Resume(null));
-        List<Job> jobs = application.getJobs(employer);
-
-        List<Job> expected = new ArrayList<Job>() {{
-            add(createNewJob("高级前端开发", JobType.JReq));
+        application.execute(Command.publish, new Employer(employerName), new Job(jobName,JobType.JReq), null, null, null );
+        List<List<String>> jobs = application.getJobs(employerName, GettingJobsType.published);
+        List<List<String>> expected = new ArrayList<List<String>>() {{
+            add(createNewJob("高级前端开发", "JReq"));
         }};
+
         assertThat(jobs, is(expected));
     }
 
     @Test
     public void employers_should_only_be_able_to_see_jobs_published_by_them() throws RequiresResumeForJReqJobException, InvalidResumeException {
-        Employer alibaba = new Employer("Alibaba");
-        Employer tencent = new Employer("Tencent");
+        String employerAlibaba = "Alibaba";
+        String employerTencent = "Tencent";
         String seniorJavaDevJob = "高级Java开发";
         String juniorJavaDevJob = "Java开发";
-        application.execute(Command.publish, alibaba, new Job(seniorJavaDevJob, JobType.JReq), null, new JobSeeker(null), new Resume(null));
-        application.execute(Command.publish, tencent, new Job(juniorJavaDevJob, JobType.JReq), null, new JobSeeker(null), new Resume(null));
-        List<Job> jobs = application.getJobs(alibaba);
+        application.execute(Command.publish, new Employer(employerAlibaba), new Job(seniorJavaDevJob, JobType.JReq), null, null, null);
+        application.execute(Command.publish, new Employer(employerTencent), new Job(juniorJavaDevJob, JobType.JReq), null, null, null);
+        List<List<String>> jobs = application.getJobs(employerAlibaba, GettingJobsType.published);
+        List<List<String>> expected = new ArrayList<List<String>>() {{
+            add(createNewJob("高级Java开发", "JReq"));
+        }};
 
-        List<Job> expected = Arrays.asList( createNewJob("高级Java开发", JobType.JReq));
         assertThat(jobs, is(expected));
     }
 
     @Test
     public void employers_should_be_able_to_publish_ATS_jobs() throws RequiresResumeForJReqJobException, InvalidResumeException {
+        String employerAlibaba = "Alibaba";
         String seniorJavaDevJob = "高级Java开发";
-        Employer alibaba = new Employer("Alibaba");
 
-        application.execute(Command.publish, alibaba, new Job(seniorJavaDevJob, JobType.ATS), null, new JobSeeker(null), new Resume(null));
-        List<Job> jobs = application.getJobs(alibaba);
+        application.execute(Command.publish, new Employer(employerAlibaba), new Job(seniorJavaDevJob, JobType.ATS), null, null, null);
+        List<List<String>> jobs = application.getJobs(employerAlibaba, GettingJobsType.published);
+        List<List<String>> expected = new ArrayList<List<String>>() {{
+            add(createNewJob("高级Java开发", "ATS"));
+        }};
 
-        List<Job> expected = Arrays.asList(createNewJob("高级Java开发", JobType.ATS));
         assertThat(jobs, is(expected));
     }
 
@@ -81,14 +83,14 @@ public class ApplicationTest {
         String employerAlibaba = "Alibaba";
         String jobSeekerName = "Jacky";
         String jobName = "高级Java开发";
-        //TODO fixbug
-        application.execute(Command.publish, new Employer(employerAlibaba), new Job(jobName, JobType.JReq), null, new JobSeeker(null), new Resume(null));
-        application.execute(Command.save, new Employer(jobSeekerName), new Job(jobName, JobType.JReq), null, new JobSeeker(null), new Resume(null));
-        Employer employer = new Employer(jobSeekerName);
-        List<Job> jobs = application.getJobs(employer);
+        application.execute(Command.publish, new Employer(employerAlibaba), new Job(jobName, JobType.JReq), null, null, null);
+        application.execute(Command.save, new Employer(jobSeekerName), new Job(jobName, JobType.JReq), null, null, null);
+        List<List<String>> savedJobs = application.getJobs(jobSeekerName, GettingJobsType.published);
+        List<List<String>> expected = new ArrayList<List<String>>() {{
+            add(createNewJob("高级Java开发", "JReq"));
+        }};
 
-        List<Job> expected = Arrays.asList(createNewJob("高级Java开发", JobType.JReq));
-        assertThat(jobs, is(expected));
+        assertThat(savedJobs, is(expected));
     }
 
     @Test
@@ -102,15 +104,13 @@ public class ApplicationTest {
         application.execute(Command.publish, new Employer(employerAlibaba), new Job(juniorJavaDevJob, JobType.ATS), null, new JobSeeker(null), new Resume(null));
         application.execute(Command.apply, new Employer(employerAlibaba), new Job(juniorJavaDevJob, JobType.ATS), LocalDate.parse("2020-01-01"), new JobSeeker(jobSeekerName), new Resume(null));
         application.execute(Command.apply, new Employer(employerAlibaba), new Job(seniorJavaDevJob, JobType.ATS), LocalDate.parse("2020-01-01"), new JobSeeker(jobSeekerName), new Resume(null));
-        Employer employer = new Employer(jobSeekerName);
-
-        List<JobApplication> jobs_new = application.getJobsApplication_new(GettingJobsType.applied, employer);
-
-        List<JobApplication> expected_new = new ArrayList<JobApplication>() {{
-            add(createNewJobApplication("Java开发", "ATS", "Alibaba", "2020-01-01"));
-            add(createNewJobApplication("高级Java开发", "ATS", "Alibaba", "2020-01-01"));
+        List<List<String>> appliedJobs = application.getJobs(jobSeekerName, GettingJobsType.applied);
+        List<List<String>> expected = new ArrayList<List<String>>() {{
+            add(createNewJob("Java开发", "ATS", "Alibaba", "2020-01-01"));
+            add(createNewJob("高级Java开发", "ATS", "Alibaba", "2020-01-01"));
         }};
-        assertThat(jobs_new, is(expected_new));
+
+        assertThat(appliedJobs, is(expected));
     }
 
     @Test(expected = RequiresResumeForJReqJobException.class)

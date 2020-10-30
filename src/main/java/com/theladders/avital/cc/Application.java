@@ -63,47 +63,12 @@ public class Application {
         }
     }
 
-    public List<Job> getJobs(Employer employer) {
-        List<List<String>> valueList = jobs.get(employer.getName());
-        List<Job> result = new ArrayList<>();
-        for (List<String> jobFields : valueList) {
-            result.add(toJob(jobFields));
+    public List<List<String>> getJobs(String employerName, GettingJobsType type) {
+        if (type == GettingJobsType.applied) {
+            return applied.get(employerName);
         }
-        return result;
-    }
 
-    private Job toJob(List<String> jobFields) {
-        String jobName = jobFields.get(0);
-        JobType jobType = JobType.valueOf(jobFields.get(1));
-        return new Job(jobName, jobType);
-    }
-
-    public List<JobApplication> getJobsApplication_new(GettingJobsType type, Employer employer) {
-        List<List<String>> valueList = applied.get(employer.getName());
-        List<JobApplication> result = new ArrayList<>();
-        for (List<String> applicationFields : valueList) {
-            result.add(toJobApplication(applicationFields));
-        }
-        return result;
-    }
-
-    private List<String> toApplicationFieldList_temp(JobApplication jobApplication) {
-        List<String> result = new ArrayList<>();
-        result.add(jobApplication.getJob().getName());
-        result.add(jobApplication.getJob().getType().name());
-        result.add(jobApplication.getApplicationTime().format(DATE_TIME_FORMATTER));
-        result.add(jobApplication.getEmployer().getName());
-        return result;
-    }
-
-    private JobApplication toJobApplication(List<String> fields) {
-        String jobName = fields.get(0);
-        String jobType = fields.get(1);
-        Job job = new Job(jobName, JobType.valueOf(jobType));
-        LocalDate applicationTime = LocalDate.parse(fields.get(2));
-        String employerName = fields.get(3);
-        Employer employer = new Employer(employerName);
-        return new JobApplication(job, applicationTime, employer);
+        return jobs.get(employerName);
     }
 
     public List<String> findApplicants(String jobName) {
