@@ -13,62 +13,97 @@ public class Application {
     private final HashMap<String, List<List<String>>> applied = new HashMap<>();
     private final List<List<String>> failedApplications = new ArrayList<>();
 
-    public void execute(String employerName, String jobName, String jobSeekerName, String resumeApplicantName, LocalDate applicationTime, Command command, final JobType jobType) throws RequiresResumeForJReqJobException, InvalidResumeException {
+    public void execute(Command command, final Employer employer, final Job job, String resumeApplicantName, LocalDate applicationTime, JobSeeker jobSeeker) throws RequiresResumeForJReqJobException, InvalidResumeException {
         switch (command) {
             case publish:
-                List<List<String>> alreadyPublished = jobs.getOrDefault(employerName, new ArrayList<>());
+                List<List<String>> alreadyPublished = jobs.getOrDefault(employer.getName(), new ArrayList<>());
 
                 alreadyPublished.add(new ArrayList<String>() {{
-                    add(jobName);
-                    add(jobType.name());
+                    add(job.getName());
+                    add(job.getType().name());
                 }});
-                jobs.put(employerName, alreadyPublished);
+                jobs.put(employer.getName(), alreadyPublished);
                 break;
             case save: {
-                List<List<String>> saved = jobs.getOrDefault(employerName, new ArrayList<>());
+                List<List<String>> saved = jobs.getOrDefault(employer.getName(), new ArrayList<>());
 
                 saved.add(new ArrayList<String>() {{
-                    add(jobName);
-                    add(jobType.name());
+                    add(job.getName());
+                    add(job.getType().name());
                 }});
-                jobs.put(employerName, saved);
+                jobs.put(employer.getName(), saved);
                 break;
             }
             case apply: {
-                if (jobType == JobType.JReq && resumeApplicantName == null) {
+                if (job.getType() == JobType.JReq && resumeApplicantName == null) {
                     List<String> failedApplication = new ArrayList<String>() {{
-                        add(jobName);
-                        add(jobType.name());
+                        add(job.getName());
+                        add(job.getType().name());
                         add(applicationTime.format(DATE_TIME_FORMATTER));
-                        add(employerName);
+                        add(employer.getName());
                     }};
                     failedApplications.add(failedApplication);
                     throw new RequiresResumeForJReqJobException();
                 }
 
-                if (jobType == JobType.JReq && !resumeApplicantName.equals(jobSeekerName)) {
+                if (job.getType() == JobType.JReq && !resumeApplicantName.equals(jobSeeker.getName())) {
                     throw new InvalidResumeException();
                 }
-                List<List<String>> saved = this.applied.getOrDefault(jobSeekerName, new ArrayList<>());
+                List<List<String>> saved = this.applied.getOrDefault(jobSeeker.getName(), new ArrayList<>());
 
                 saved.add(new ArrayList<String>() {{
-                    add(jobName);
-                    add(jobType.name());
+                    add(job.getName());
+                    add(job.getType().name());
                     add(applicationTime.format(DATE_TIME_FORMATTER));
-                    add(employerName);
+                    add(employer.getName());
                 }});
-                applied.put(jobSeekerName, saved);
+                applied.put(jobSeeker.getName(), saved);
                 break;
             }
         }
     }
 
-    public List<List<String>> getJobs(String employerName, GettingJobsType type) {
-        if (type == GettingJobsType.applied) {
-            return applied.get(employerName);
+    public List<Job> getJobs(Employer employer) {
+        List<List<String>> valueList = jobs.get(employer.getName());
+        List<Job> result = new ArrayList<>();
+        for (List<String> jobFields : valueList) {
+            result.add(toJob(jobFields));
         }
+        return result;
+    }
 
-        return jobs.get(employerName);
+    private Job toJob(List<String> jobFields) {
+        String jobName = jobFields.get(0);
+        JobType jobType = JobType.valueOf(jobFields.get(1));
+        return new Job(jobName, jobType);
+    }
+
+    public List<JobApplication> getJobsApplication_new(GettingJobsType type, Employer employer) {
+        List<List<String>> valueList = applied.get(employer.getName());
+        List<JobApplication> result = new ArrayList<>();
+        for (List<String> applicationFields : valueList) {
+            result.add(toJobApplication(applicationFields));
+        }
+        return result;
+    }
+
+    private List<String> toApplicationFieldList_temp(JobApplication jobApplication) {
+        List<String> result = new ArrayList<>();
+        result.add(jobApplication.getJob().getName());
+        result.add(jobApplication.getJob().getType().name());
+        result.add(jobApplication.getApplicationTime().format(DATE_TIME_FORMATTER));
+        result.add(jobApplication.getEmployer().getName());
+        return result;
+    }
+
+    private JobApplication toJobApplication(List<String> fields) {
+        String jobName = fields.get(0);
+        String jobType = fields.get(1);
+        Job job = new Job(jobName, JobType.valueOf(jobType));
+        LocalDate applicationTime = LocalDate.parse(fields.get(2));
+        String employerName = fields.get(3);
+        Employer employer = new Employer(employerName);
+        return new JobApplication(job, applicationTime, employer);
     }
 
     public List<String> findApplicants(String jobName) {
@@ -199,17 +234,17 @@ public class Application {
         }
     }
 
-    public int getSuccessfulApplications(String employerName, String jobName) {
+    public int getSuccessfulApplications(String jobName, Employer employer) {
         int result = 0;
         for (Entry<String, List<List<String>>> set : this.applied.entrySet()) {
             List<List<String>> jobs = set.getValue();
 
-            result += jobs.stream().anyMatch(job -> job.get(3).equals(employerName) && job.get(0).equals(jobName)) ? 1 : 0;
+            result += jobs.stream().anyMatch(job -> job.get(3).equals(employer.getName()) && job.get(0).equals(jobName)) ? 1 : 0;
         }
         return result;
     }
 
-    public int getUnsuccessfulApplications(String employerName, String jobName) {
-        return (int) failedApplications.stream().filter(job -> job.get(0).equals(jobName) && job.get(3).equals(employerName)).count();
+    public int getUnsuccessfulApplications(String jobName, Employer employer) {
+        return (int) failedApplications.stream().filter(job -> job.get(0).equals(jobName) && job.get(3).equals(employer.getName())).count();
     }
 }
