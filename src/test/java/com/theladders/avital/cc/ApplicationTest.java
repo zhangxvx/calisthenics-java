@@ -147,8 +147,8 @@ public class ApplicationTest {
         List<String> applicants = application.findApplicants(seniorJavaDevJob);
 
         List<String> expected = new ArrayList<String>() {{
-            add("Lam");
             add("Jacky");
+            add("Lam");
         }};
 
         assertThat(applicants, is(expected));
