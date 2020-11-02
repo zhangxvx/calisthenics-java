@@ -3,7 +3,7 @@ package com.theladders.avital.cc;
 import java.util.Objects;
 
 public class Employer {
-    private String name;
+    private final String name;
 
     public Employer(String name) {
         this.name = name;
@@ -11,10 +11,6 @@ public class Employer {
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override

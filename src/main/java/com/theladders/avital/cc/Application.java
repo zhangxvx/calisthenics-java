@@ -6,7 +6,7 @@ import java.util.*;
 public class Application {
 
     private final Jobs jobs = new Jobs();
-    final AppliedJobApplications appliedJobApplications = new AppliedJobApplications();
+    private final AppliedJobApplications appliedJobApplications = new AppliedJobApplications();
     private final JobApplications jobApplications = new JobApplications();
 
     public void execute(Command command, final Employer employer, final Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
@@ -39,22 +39,23 @@ public class Application {
         }
     }
 
-    public List<List<String>> getJobs(String employerName, GettingJobsType type) {
-        if (type == GettingJobsType.applied) {
-            return appliedJobApplications.getJobApplications(employerName);
-        }
-        return jobs.getJobs(employerName);
+    public List<JobApplication> getJobApplications(JobSeeker jobSeeker) {
+        return appliedJobApplications.getJobApplications(jobSeeker);
     }
 
-    public List<String> findApplicants(String jobName) {
+    public List<Job> getJobs(Employer employer) {
+        return new ArrayList<>(jobs.getJobs(employer));
+    }
+
+    public List<JobSeeker> findApplicants(String jobName) {
         return appliedJobApplications.find(jobName, null, null);
     }
 
-    public List<String> findApplicants(String jobName, LocalDate from) {
+    public List<JobSeeker> findApplicants(String jobName, LocalDate from) {
         return appliedJobApplications.find(jobName, from, null);
     }
 
-    public List<String> findApplicants(String jobName, LocalDate from, LocalDate to) {
+    public List<JobSeeker> findApplicants(String jobName, LocalDate from, LocalDate to) {
         return appliedJobApplications.find(jobName, from, to);
     }
 

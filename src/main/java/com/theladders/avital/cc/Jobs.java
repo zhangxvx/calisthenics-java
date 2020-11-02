@@ -5,28 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Jobs {
-    private final HashMap<String, List<List<String>>> jobs = new HashMap<>();
-
-    List<String> createJob(Job job) {
-        return new ArrayList<String>() {{
-            add(job.getName());
-            add(job.getType().name());
-        }};
-    }
+    private final HashMap<Employer, List<Job>> jobs = new HashMap<>();
 
     public void saveJob(Employer employer, Job job) {
-        List<List<String>> saved = jobs.getOrDefault(employer.getName(), new ArrayList<>());
-        saved.add(createJob(job));
-        jobs.put(employer.getName(), saved);
+        List<Job> saved = jobs.getOrDefault(employer, new ArrayList<>());
+        saved.add(job);
+        jobs.put(employer, saved);
     }
 
     public void publishJob(Employer employer, Job job) {
-        List<List<String>> alreadyPublished = jobs.getOrDefault(employer.getName(), new ArrayList<>());
-        alreadyPublished.add(createJob(job));
-        jobs.put(employer.getName(), alreadyPublished);
+        saveJob(employer, job);
     }
 
-    public List<List<String>> getJobs(String employerName) {
-        return this.jobs.get(employerName);
+    public List<Job> getJobs(Employer employer) {
+        return jobs.get(employer);
     }
 }
