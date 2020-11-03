@@ -11,12 +11,20 @@ public class Job {
         this.type = type;
     }
 
-    public String getName() {
-        return name;
+    public boolean isMatched(String jobName) {
+        return name.equals(jobName);
     }
 
-    public JobType getType() {
-        return type;
+    public boolean isJReq() {
+        return type == JobType.JReq;
+    }
+
+    public String toTaleCells() {
+        return "<td>" + name + "</td>" + "<td>" + type + "</td>";
+    }
+
+    public String toCsvCells() {
+        return name + "," + type + ",";
     }
 
     @Override

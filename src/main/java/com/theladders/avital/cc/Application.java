@@ -5,36 +5,31 @@ import java.util.*;
 
 public class Application {
 
-    private final Jobs jobs = new Jobs();
+    private final Jobs<Employer> publishedJobs = new Jobs<>();
+    private final Jobs<JobSeeker> savedJobs = new Jobs<>();
     private final AppliedJobApplications appliedJobApplications = new AppliedJobApplications();
     private final JobApplications jobApplications = new JobApplications();
 
-    public void execute(Command command, final Employer employer, final Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
-        if (command == Command.publish) {
-            jobs.publishJob(employer, job);
-            return;
-        }
-        if (command == Command.save) {
-            jobs.saveJob(employer, job);
-            return;
-        }
-        if (command == Command.apply) {
-            applyJob(employer, job, applicationTime, jobSeeker, resume);
-        }
+    public void saveJob(Job job, JobSeeker jobSeeker) {
+        savedJobs.saveJob(jobSeeker, job);
     }
 
-    private void applyJob(Employer employer, Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
+    public void publishJob(Employer employer, Job job) {
+        publishedJobs.saveJob(employer, job);
+    }
+
+    public void applyJob(Employer employer, Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
         validateResume(employer, job, applicationTime, jobSeeker, resume);
         appliedJobApplications.add(employer, job, applicationTime, jobSeeker);
     }
 
     private void validateResume(Employer employer, Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
-        if (job.getType() == JobType.JReq && resume.getApplicantName() == null) {
+        if (job.isJReq() && !resume.isExists()) {
             jobApplications.add(employer, job, applicationTime);
             throw new RequiresResumeForJReqJobException();
         }
 
-        if (job.getType() == JobType.JReq && !resume.getApplicantName().equals(jobSeeker.getName())) {
+        if (job.isJReq() && !resume.isMatched(jobSeeker)) {
             throw new InvalidResumeException();
         }
     }
@@ -44,7 +39,11 @@ public class Application {
     }
 
     public List<Job> getJobs(Employer employer) {
-        return new ArrayList<>(jobs.getJobs(employer));
+        return new ArrayList<>(publishedJobs.getJobs(employer));
+    }
+
+    public List<Job> getJobs(JobSeeker jobSeeker) {
+        return new ArrayList<>(savedJobs.getJobs(jobSeeker));
     }
 
     public List<JobSeeker> findApplicants(String jobName) {

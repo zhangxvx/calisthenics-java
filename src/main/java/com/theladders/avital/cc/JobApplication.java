@@ -1,9 +1,12 @@
 package com.theladders.avital.cc;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class JobApplication {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Job job;
     private final LocalDate applicationTime;
     private final Employer employer;
@@ -14,16 +17,34 @@ public class JobApplication {
         this.employer = employer;
     }
 
-    public Job getJob() {
-        return job;
+    static Predicate<JobApplication> getPredicate(String jobName, Employer employer) {
+        return application -> application.job.isMatched(jobName) && application.employer.equals(employer);
     }
 
-    public LocalDate getApplicationTime() {
-        return applicationTime;
+    public static Predicate<JobApplication> getPredicate(LocalDate date) {
+        return jobApplication -> jobApplication.applicationTime.equals(date);
     }
 
-    public Employer getEmployer() {
-        return employer;
+    static Predicate<JobApplication> getPredicate(String jobName, LocalDate from, LocalDate to) {
+        if (from == null && to == null) {
+            return application -> application.job.isMatched(jobName);
+        }
+        if (jobName == null && to == null) {
+            return application -> !from.isAfter(application.applicationTime);
+        }
+        if (jobName == null && from == null) {
+            return application -> !to.isBefore(application.applicationTime);
+        }
+        if (jobName == null) {
+            return application -> !from.isAfter(application.applicationTime) &&
+                    !to.isBefore(application.applicationTime);
+        }
+        if (to != null) {
+            return application -> application.job.isMatched(jobName) &&
+                    !to.isBefore(application.applicationTime);
+        }
+        return application -> application.job.isMatched(jobName) &&
+                !from.isAfter(application.applicationTime);
     }
 
     @Override
@@ -39,5 +60,21 @@ public class JobApplication {
     @Override
     public int hashCode() {
         return Objects.hash(job, applicationTime, employer);
+    }
+
+    String toTableRow(JobSeeker jobSeeker) {
+        return "<tr>" + "<td>" + employer + "</td>" +
+                job.toTaleCells() +
+                "<td>" + jobSeeker + "</td>" +
+                "<td>" + applicationTime.format(DATE_TIME_FORMATTER) + "</td>" +
+                "</tr>";
+    }
+
+    String toCsvRow(JobSeeker jobSeeker) {
+        return employer + "," +
+                job.toCsvCells() +
+                jobSeeker + "," +
+                applicationTime.format(DATE_TIME_FORMATTER) +
+                "\n";
     }
 }

@@ -60,22 +60,16 @@ public class AppliedJobApplications {
         return result;
     }
 
-    private String concatTableRow(String content, JobSeeker applicant, List<JobApplication> appliedOnDate) {
-        for (JobApplication job : appliedOnDate) {
-            content = content.concat("<tr>" + "<td>" + job.getEmployer().getName() + "</td>" +
-                    "<td>" + job.getJob().getName() + "</td>" + "<td>" + job.getJob().getType() + "</td>" +
-                    "<td>" + applicant.getName() + "</td>" + "<td>" + job.getApplicationTime().format(JobApplications.DATE_TIME_FORMATTER) + "</td>" +
-                    "</tr>");
+    private String concatTableRow(String content, JobSeeker jobSeeker, List<JobApplication> appliedOnDate) {
+        for (JobApplication application : appliedOnDate) {
+            content = content.concat(application.toTableRow(jobSeeker));
         }
         return content;
     }
 
-    private String concatCsvRow(String result, JobSeeker applicant, List<JobApplication> appliedOnDate) {
+    private String concatCsvRow(String result, JobSeeker jobSeeker, List<JobApplication> appliedOnDate) {
         for (JobApplication job : appliedOnDate) {
-            result = result.concat(job.getEmployer().getName() + "," +
-                    job.getJob().getName() + "," + job.getJob().getType() + "," +
-                    applicant.getName() + "," + job.getApplicationTime().format(JobApplications.DATE_TIME_FORMATTER) +
-                    "\n");
+            result = result.concat(job.toCsvRow(jobSeeker));
         }
         return result;
     }
@@ -87,7 +81,7 @@ public class AppliedJobApplications {
     }
 
     List<JobSeeker> find(String jobName, LocalDate from, LocalDate to) {
-        Predicate<JobApplication> listPredicate = JobApplications.getPredicate(jobName, from, to);
+        Predicate<JobApplication> listPredicate = JobApplication.getPredicate(jobName, from, to);
         return jobApplications.entrySet().stream()
                 .filter(set -> set.getValue().isMatched(listPredicate))
                 .map(Map.Entry::getKey)
