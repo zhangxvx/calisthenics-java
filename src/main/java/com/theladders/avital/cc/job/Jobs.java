@@ -1,4 +1,4 @@
-package com.theladders.avital.cc;
+package com.theladders.avital.cc.job;
 
 import java.util.ArrayList;
 import java.util.HashMap;

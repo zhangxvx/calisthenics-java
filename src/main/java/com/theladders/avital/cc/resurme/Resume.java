@@ -1,20 +1,22 @@
-package com.theladders.avital.cc;
+package com.theladders.avital.cc.resurme;
+
+import com.theladders.avital.cc.jobseeker.JobSeeker;
 
 public class Resume {
-    private JobSeeker applicant;
+    private final JobSeeker applicant;
 
     public Resume(JobSeeker applicant) {
         this.applicant = applicant;
     }
 
-    boolean isMatched(JobSeeker jobSeeker) {
+    public boolean isMatched(JobSeeker jobSeeker) {
         if (applicant == null) {
             return false;
         }
         return applicant.equals(jobSeeker);
     }
 
-    boolean isExists() {
+    public boolean isExists() {
         return applicant != null;
     }
 }

@@ -1,4 +1,4 @@
-package com.theladders.avital.cc;
+package com.theladders.avital.cc.jobapplication;
 
 public class RequiresResumeForJReqJobException extends Throwable {
 }

@@ -1,7 +1,7 @@
-package com.theladders.avital.cc;
+package com.theladders.avital.cc.jobseeker;
 
 public class JobSeeker implements Comparable<JobSeeker>{
-    private String name;
+    private final String name;
 
     public JobSeeker(String name) {
         this.name = name;
