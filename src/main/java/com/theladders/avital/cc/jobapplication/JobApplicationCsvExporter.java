@@ -11,10 +11,15 @@ public class JobApplicationCsvExporter implements JobApplicationExporter {
     private static final String CSV_HEADER = "Employer,Job,Job Type,Applicants,Date" + "\n";
 
     private String concatCsvRow(String result, JobSeeker jobSeeker, List<JobApplication> appliedOnDate) {
-        for (JobApplication job : appliedOnDate) {
-            result = result.concat(job.toCsvRow(jobSeeker));
+        for (JobApplication jobApplication : appliedOnDate) {
+            result = result.concat(toCsvRow(jobApplication, jobSeeker));
         }
         return result;
+    }
+
+    String toCsvRow(JobApplication application, JobSeeker jobSeeker) {
+        return application.publishedJob.toCsvCells() + "," + jobSeeker + "," +
+                application.applicationTime.format(JobApplication.DATE_TIME_FORMATTER) + "\n";
     }
 
     @Override

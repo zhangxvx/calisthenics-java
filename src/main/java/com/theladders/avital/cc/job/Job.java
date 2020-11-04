@@ -24,7 +24,7 @@ public class Job {
     }
 
     public String toCsvCells() {
-        return name + "," + type + ",";
+        return name + "," + type;
     }
 
     @Override

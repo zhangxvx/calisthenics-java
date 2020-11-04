@@ -20,9 +20,16 @@ public class JobApplicationHtmlExporter implements JobApplicationExporter {
 
     private String concatTableRow(String content, JobSeeker jobSeeker, List<JobApplication> appliedOnDate) {
         for (JobApplication application : appliedOnDate) {
-            content = content.concat(application.toTableRow(jobSeeker));
+            content = content.concat(toTableRow(application, jobSeeker));
         }
         return content;
+    }
+
+    String toTableRow(JobApplication application, JobSeeker jobSeeker) {
+        return "<tr>" + application.publishedJob.toTableCells() +
+                "<td>" + jobSeeker + "</td>" +
+                "<td>" + application.applicationTime.format(JobApplication.DATE_TIME_FORMATTER) + "</td>" +
+                "</tr>";
     }
 
     @Override
