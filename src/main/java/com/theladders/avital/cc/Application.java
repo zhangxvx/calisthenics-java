@@ -4,6 +4,7 @@ import com.theladders.avital.cc.employer.Employer;
 import com.theladders.avital.cc.job.Job;
 import com.theladders.avital.cc.job.JobRepository;
 import com.theladders.avital.cc.jobapplication.*;
+import com.theladders.avital.cc.jobapplication.export.ExportType;
 import com.theladders.avital.cc.jobseeker.JobSeeker;
 import com.theladders.avital.cc.resurme.Resume;
 

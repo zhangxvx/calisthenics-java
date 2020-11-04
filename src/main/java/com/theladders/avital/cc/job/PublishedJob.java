@@ -2,10 +2,11 @@ package com.theladders.avital.cc.job;
 
 import com.google.common.base.Objects;
 import com.theladders.avital.cc.employer.Employer;
+import com.theladders.avital.cc.jobapplication.export.JobApplicationExporter;
 
 public class PublishedJob {
-    final Job job;
-    final Employer employer;
+    private final Job job;
+    private final Employer employer;
 
     public PublishedJob(Job job, Employer employer) {
         this.job = job;
@@ -30,12 +31,9 @@ public class PublishedJob {
         return Objects.hashCode(job, employer);
     }
 
-    public String toTableCells() {
-        return "<td>" + employer + "</td>" + job.toTaleCells();
-    }
-
-    public String toCsvCells() {
-        return employer + "," + job.toCsvCells();
+    public void accept(JobApplicationExporter exporter) {
+        exporter.addCell(employer.toString());
+        job.accept(exporter);
     }
 
     public boolean isMatched(String jobName) {

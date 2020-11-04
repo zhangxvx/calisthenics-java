@@ -4,19 +4,23 @@ import com.google.common.base.Objects;
 import com.theladders.avital.cc.employer.Employer;
 import com.theladders.avital.cc.job.Job;
 import com.theladders.avital.cc.job.PublishedJob;
+import com.theladders.avital.cc.jobapplication.export.JobApplicationExporter;
+import com.theladders.avital.cc.jobseeker.JobSeeker;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.function.Predicate;
 
 public class JobApplication {
-    static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    final LocalDate applicationTime;
-    final PublishedJob publishedJob;
+    private final PublishedJob publishedJob;
+    private final ApplicationInfo applicationInfo;
 
     public JobApplication(Job job, LocalDate applicationTime, Employer employer) {
+        this(job, applicationTime, employer, null);
+    }
+
+    public JobApplication(Job job, LocalDate applicationTime, Employer employer, JobSeeker jobSeeker) {
+        this.applicationInfo = new ApplicationInfo(jobSeeker, applicationTime);
         this.publishedJob = new PublishedJob(job, employer);
-        this.applicationTime = applicationTime;
     }
 
     static Predicate<JobApplication> getPredicate(String jobName, Employer employer) {
@@ -24,7 +28,7 @@ public class JobApplication {
     }
 
     public static Predicate<JobApplication> getPredicate(LocalDate date) {
-        return jobApplication -> jobApplication.applicationTime.equals(date);
+        return jobApplication -> jobApplication.applicationInfo.isMatched(date);
     }
 
     static Predicate<JobApplication> getPredicate(String jobName, LocalDate from, LocalDate to) {
@@ -33,12 +37,19 @@ public class JobApplication {
             predicate = predicate.and(application -> application.publishedJob.isMatched(jobName));
         }
         if (from != null) {
-            predicate = predicate.and(application -> !from.isAfter(application.applicationTime));
+            predicate = predicate.and(application -> application.applicationInfo.isAfter(from));
         }
         if (to != null) {
-            predicate = predicate.and(application -> !to.isBefore(application.applicationTime));
+            predicate = predicate.and(application -> application.applicationInfo.isBefore(to));
         }
         return predicate;
+    }
+
+    public void accept(JobApplicationExporter exporter) {
+        exporter.startRow();
+        publishedJob.accept(exporter);
+        applicationInfo.accept(exporter);
+        exporter.endRow();
     }
 
     @Override
@@ -46,12 +57,12 @@ public class JobApplication {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         JobApplication that = (JobApplication) o;
-        return Objects.equal(applicationTime, that.applicationTime) &&
-                Objects.equal(publishedJob, that.publishedJob);
+        return Objects.equal(publishedJob, that.publishedJob) &&
+                Objects.equal(applicationInfo, that.applicationInfo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(applicationTime, publishedJob);
+        return Objects.hashCode(publishedJob, applicationInfo);
     }
 }

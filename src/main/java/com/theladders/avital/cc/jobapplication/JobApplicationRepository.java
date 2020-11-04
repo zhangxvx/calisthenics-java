@@ -15,7 +15,7 @@ public class JobApplicationRepository {
     private void validateResume(Employer employer, Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume)
             throws RequiresResumeForJReqJobException, InvalidResumeException {
         if (job.isJReq() && !resume.isExists()) {
-            failedJobApplications.add(employer, job, applicationTime);
+            failedJobApplications.add(employer, job, applicationTime, jobSeeker);
             throw new RequiresResumeForJReqJobException();
         }
 

@@ -1,5 +1,7 @@
 package com.theladders.avital.cc.job;
 
+import com.theladders.avital.cc.jobapplication.export.JobApplicationExporter;
+
 import java.util.Objects;
 
 public class Job {
@@ -19,12 +21,9 @@ public class Job {
         return type == JobType.JReq;
     }
 
-    public String toTaleCells() {
-        return "<td>" + name + "</td>" + "<td>" + type + "</td>";
-    }
-
-    public String toCsvCells() {
-        return name + "," + type;
+    public void accept(JobApplicationExporter exporter) {
+        exporter.addCell(name);
+        exporter.addCell(type.name());
     }
 
     @Override

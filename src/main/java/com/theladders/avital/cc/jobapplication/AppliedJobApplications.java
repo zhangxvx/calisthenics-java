@@ -2,9 +2,13 @@ package com.theladders.avital.cc.jobapplication;
 
 import com.theladders.avital.cc.employer.Employer;
 import com.theladders.avital.cc.job.Job;
+import com.theladders.avital.cc.jobapplication.export.JobApplicationCsvExporter;
+import com.theladders.avital.cc.jobapplication.export.JobApplicationExporter;
+import com.theladders.avital.cc.jobapplication.export.JobApplicationHtmlExporter;
 import com.theladders.avital.cc.jobseeker.JobSeeker;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +20,7 @@ public class AppliedJobApplications {
 
     public void add(Employer employer, Job job, LocalDate applicationTime, JobSeeker jobSeeker) {
         JobApplications saved = jobApplications.getOrDefault(jobSeeker, new JobApplications());
-        saved.add(employer, job, applicationTime);
+        saved.add(employer, job, applicationTime, jobSeeker);
         jobApplications.put(jobSeeker, saved);
     }
 
@@ -25,12 +29,22 @@ public class AppliedJobApplications {
         return jobApplications.toList();
     }
 
+    public String export(LocalDate date, JobApplicationExporter exporter) {
+        jobApplications.values().stream()
+                .map(applications -> applications.getMatchedItems(date))
+                .flatMap(Collection::stream)
+                .forEach(application -> application.accept(exporter));
+        return exporter.getContent();
+    }
+
     public String exportHtml(LocalDate date) {
-        return new JobApplicationHtmlExporter().export(date, this.jobApplications.entrySet());
+        JobApplicationHtmlExporter jobApplicationHtmlExporter = new JobApplicationHtmlExporter();
+        return export(date, jobApplicationHtmlExporter);
     }
 
     public String exportCsv(LocalDate date) {
-        return new JobApplicationCsvExporter().export(date, this.jobApplications.entrySet());
+        JobApplicationCsvExporter exporter = new JobApplicationCsvExporter();
+        return export(date, exporter);
     }
 
     public int getCount(String jobName, Employer employer) {
