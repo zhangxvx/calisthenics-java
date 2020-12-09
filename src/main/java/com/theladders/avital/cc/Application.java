@@ -1,230 +1,71 @@
 package com.theladders.avital.cc;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.theladders.avital.cc.employer.Employer;
+import com.theladders.avital.cc.job.Job;
+import com.theladders.avital.cc.job.JobRepository;
+import com.theladders.avital.cc.jobapplication.InvalidResumeException;
+import com.theladders.avital.cc.jobapplication.JobApplication;
+import com.theladders.avital.cc.jobapplication.JobApplicationRepository;
+import com.theladders.avital.cc.jobapplication.RequiresResumeForJReqJobException;
+import com.theladders.avital.cc.jobapplication.export.ExportType;
+import com.theladders.avital.cc.jobseeker.JobSeeker;
+import com.theladders.avital.cc.resume.Resume;
 
-import static java.util.Map.*;
+import java.time.LocalDate;
+import java.util.List;
 
 public class Application {
-    private final HashMap<String, List<List<String>>> jobs = new HashMap<>();
-    private final HashMap<String, List<List<String>>> applied = new HashMap<>();
-    private final List<List<String>> failedApplications = new ArrayList<>();
+    private final JobApplicationRepository jobApplicationRepository = new JobApplicationRepository();
+    private final JobRepository jobRepository = new JobRepository();
 
-    public void execute(String command, String employerName, String jobName, String jobType, String jobSeekerName, String resumeApplicantName, LocalDate applicationTime) throws NotSupportedJobTypeException, RequiresResumeForJReqJobException, InvalidResumeException {
-        if (command == "publish") {
-            if (!jobType.equals("JReq") && !jobType.equals("ATS")) {
-                throw new NotSupportedJobTypeException();
-            }
+    public void saveJob(Job job, JobSeeker jobSeeker) {
+        jobRepository.saveJob(job, jobSeeker);
+    }
 
-            List<List<String>> alreadyPublished = jobs.getOrDefault(employerName, new ArrayList<>());
+    public void publishJob(Employer employer, Job job) {
+        jobRepository.publishJob(employer, job);
+    }
 
-            alreadyPublished.add(new ArrayList<String>() {{
-                add(jobName);
-                add(jobType);
-            }});
-            jobs.put(employerName, alreadyPublished);
-        } else if (command == "save") {
-            List<List<String>> saved = jobs.getOrDefault(employerName, new ArrayList<>());
+    public List<Job> getJobs(Employer employer) {
+        return jobRepository.getJobs(employer);
+    }
 
-            saved.add(new ArrayList<String>() {{
-                add(jobName);
-                add(jobType);
-            }});
-            jobs.put(employerName, saved);
-        } else if (command == "apply") {
-            if (jobType.equals("JReq") && resumeApplicantName == null) {
-                List<String> failedApplication = new ArrayList<String>() {{
-                    add(jobName);
-                    add(jobType);
-                    add(applicationTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-                    add(employerName);
-                }};
-                failedApplications.add(failedApplication);
-                throw new RequiresResumeForJReqJobException();
-            }
+    public List<Job> getJobs(JobSeeker jobSeeker) {
+        return jobRepository.getJobs(jobSeeker);
+    }
 
-            if (jobType.equals("JReq") && !resumeApplicantName.equals(jobSeekerName)) {
-                throw new InvalidResumeException();
-            }
-            List<List<String>> saved = this.applied.getOrDefault(jobSeekerName, new ArrayList<>());
+    public void applyJob(Employer employer, Job job, LocalDate applicationTime, JobSeeker jobSeeker, Resume resume) throws RequiresResumeForJReqJobException, InvalidResumeException {
+        jobApplicationRepository.applyJob(employer, job, applicationTime, jobSeeker, resume);
+    }
 
-            saved.add(new ArrayList<String>() {{
-                add(jobName);
-                add(jobType);
-                add(applicationTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-                add(employerName);
-            }});
-            applied.put(jobSeekerName, saved);
+    public String export(LocalDate date, ExportType type) {
+        if (type == ExportType.csv) {
+            return jobApplicationRepository.exportCsv(date);
         }
+        return jobApplicationRepository.exportHtml(date);
     }
 
-    public List<List<String>> getJobs(String employerName, String type) {
-        if (type.equals("applied")) {
-            return applied.get(employerName);
-        }
-
-        return jobs.get(employerName);
+    public List<JobApplication> getJobApplications(JobSeeker jobSeeker) {
+        return jobApplicationRepository.getJobApplications(jobSeeker);
     }
 
-    public List<String> findApplicants(String jobName, String employerName) {
-        return findApplicants(jobName, employerName, null);
+    public List<JobSeeker> findApplicants(String jobName) {
+        return jobApplicationRepository.getJobSeekers(jobName, null, null);
     }
 
-    public List<String> findApplicants(String jobName, String employerName, LocalDate from) {
-        return findApplicants(jobName, employerName, from, null);
+    public List<JobSeeker> findApplicants(String jobName, LocalDate from) {
+        return jobApplicationRepository.getJobSeekers(jobName, from, null);
     }
 
-    public List<String> findApplicants(String jobName, String employerName, LocalDate from, LocalDate to) {
-        if (from == null && to == null) {
-            List<String> result = new ArrayList<String>() {};
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs = set.getValue();
-                boolean hasAppliedToThisJob = jobs.stream().anyMatch(job -> job.get(0).equals(jobName));
-                if (hasAppliedToThisJob) {
-                    result.add(applicant);
-                }
-            }
-            return result;
-        } else if (jobName == null && to == null) {
-            List<String> result = new ArrayList<String>() {};
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs = set.getValue();
-                boolean isAppliedThisDate = jobs.stream().anyMatch(job ->
-                        !from.isAfter(LocalDate.parse(job.get(2), DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-                if (isAppliedThisDate) {
-                    result.add(applicant);
-                }
-            }
-            return result;
-        } else if (jobName == null && from == null) {
-            List<String> result = new ArrayList<String>() {};
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs = set.getValue();
-                boolean isAppliedThisDate = jobs.stream().anyMatch(job ->
-                        !to.isBefore(LocalDate.parse(job.get(2), DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-                if (isAppliedThisDate) {
-                    result.add(applicant);
-                }
-            }
-            return result;
-
-        } else if (jobName == null) {
-            List<String> result = new ArrayList<String>() {};
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs = set.getValue();
-                boolean isAppliedThisDate = jobs.stream().anyMatch(job -> !from.isAfter(LocalDate.parse(job.get(2), DateTimeFormatter.ofPattern("yyyy-MM-dd"))) && !to.isBefore(LocalDate.parse(job.get(2), DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-                if (isAppliedThisDate) {
-                    result.add(applicant);
-                }
-            }
-            return result;
-
-        } else if (to != null) {
-            List<String> result = new ArrayList<String>() {};
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs = set.getValue();
-                boolean isAppliedThisDate = jobs.stream().anyMatch(job -> job.get(0).equals(jobName) && !to.isBefore(LocalDate.parse(job.get(2), DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-                if (isAppliedThisDate) {
-                    result.add(applicant);
-                }
-            }
-            return result;
-        } else {
-            List<String> result = new ArrayList<String>() {};
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs = set.getValue();
-                boolean isAppliedThisDate = jobs.stream().anyMatch(job -> job.get(0).equals(jobName) && !from.isAfter(LocalDate.parse(job.get(2), DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-                if (isAppliedThisDate) {
-                    result.add(applicant);
-                }
-            }
-            return result;
-        }
+    public List<JobSeeker> findApplicants(String jobName, LocalDate from, LocalDate to) {
+        return jobApplicationRepository.getJobSeekers(jobName, from, to);
     }
 
-    public String export(String type, LocalDate date) {
-        if (type == "csv") {
-            String result = "Employer,Job,Job Type,Applicants,Date" + "\n";
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs1 = set.getValue();
-                List<List<String>> appliedOnDate = jobs1.stream().filter(job -> job.get(2).equals(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))).collect(Collectors.toList());
-
-                for (List<String> job : appliedOnDate) {
-                    result = result.concat(job.get(3) + "," + job.get(0) + "," + job.get(1) + "," + applicant + "," + job.get(2) + "\n");
-                }
-            }
-            return result;
-        } else {
-            String content = "";
-            Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, List<List<String>>> set = iterator.next();
-                String applicant = set.getKey();
-                List<List<String>> jobs1 = set.getValue();
-                List<List<String>> appliedOnDate = jobs1.stream().filter(job -> job.get(2).equals(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))).collect(Collectors.toList());
-
-                for (List<String> job : appliedOnDate) {
-                    content = content.concat("<tr>" + "<td>" + job.get(3) + "</td>" + "<td>" + job.get(0) + "</td>" + "<td>" + job.get(1) + "</td>" + "<td>" + applicant + "</td>" + "<td>" + job.get(2) + "</td>" + "</tr>");
-                }
-            }
-
-            return "<!DOCTYPE html>"
-                    + "<body>"
-                    + "<table>"
-                    + "<thead>"
-                    + "<tr>"
-                    + "<th>Employer</th>"
-                    + "<th>Job</th>"
-                    + "<th>Job Type</th>"
-                    + "<th>Applicants</th>"
-                    + "<th>Date</th>"
-                    + "</tr>"
-                    + "</thead>"
-                    + "<tbody>"
-                    + content
-                    + "</tbody>"
-                    + "</table>"
-                    + "</body>"
-                    + "</html>";
-        }
+    public int getSuccessfulApplications(String jobName, Employer employer) {
+        return jobApplicationRepository.getSuccessfulCount(jobName, employer);
     }
 
-    public int getSuccessfulApplications(String employerName, String jobName) {
-        int result = 0;
-        Iterator<Entry<String, List<List<String>>>> iterator = this.applied.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Entry<String, List<List<String>>> set = iterator.next();
-            List<List<String>> jobs = set.getValue();
-
-            result += jobs.stream().anyMatch(job -> job.get(3).equals(employerName) && job.get(0).equals(jobName)) ? 1 : 0;
-        }
-        return result;
-    }
-
-    public int getUnsuccessfulApplications(String employerName, String jobName) {
-        return (int) failedApplications.stream().filter(job -> job.get(0).equals(jobName) && job.get(3).equals(employerName)).count();
+    public int getUnsuccessfulApplications(String jobName, Employer employer) {
+        return jobApplicationRepository.getUnsuccessfulCount(jobName, employer);
     }
 }
